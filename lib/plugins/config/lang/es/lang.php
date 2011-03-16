@@ -18,6 +18,7 @@
  * @author Daniel Castro Alvarado <dancas2@gmail.com>
  * @author Fernando J. Gómez <fjgomez@gmail.com>
  * @author Victor Castelan <victorcastelan@gmail.com>
+ * @author Mauro Javier Giamberardino <mgiamberardino@gmail.com>
  */
 $lang['menu']                  = 'Parámetros de configuración';
 $lang['error']                 = 'Los parámetros no han sido actualizados a causa de un valor inválido, por favor revise los cambios y re-envíe el formulario. <br /> Los valores incorrectos se mostrarán con un marco rojo alrededor.';
@@ -105,6 +106,7 @@ $lang['useslash']              = 'Usar barra (/) como separador de espacios de n
 $lang['usedraft']              = 'Guardar automáticamente un borrador mientras se edita';
 $lang['sepchar']               = 'Separador de palabras en nombres de páginas';
 $lang['canonical']             = 'Usar URLs totalmente canónicas';
+$lang['fnencode']              = 'Método para codificar nombres de archivo no-ASCII.';
 $lang['autoplural']            = 'Controlar plurales en enlaces';
 $lang['compression']           = 'Método de compresión para archivos en el ático';
 $lang['cachetime']             = 'Edad máxima para caché (segundos)';
@@ -145,6 +147,7 @@ $lang['proxy____port']         = 'Puerto del servidor Proxy';
 $lang['proxy____user']         = 'Nombre de usuario para el servidor Proxy';
 $lang['proxy____pass']         = 'Contraseña para el servidor Proxy';
 $lang['proxy____ssl']          = 'Usar ssl para conectarse al servidor Proxy';
+$lang['proxy____except']       = 'Expresiones regulares para encontrar URLs que el proxy debería omitir.';
 $lang['safemodehack']          = 'Habilitar edición (hack) de modo seguro';
 $lang['ftp____host']           = 'Nombre del servidor FTP  para modo seguro';
 $lang['ftp____port']           = 'Puerto del servidor FTP  para modo seguro';
@@ -192,3 +195,4 @@ $lang['useheading_o_0']        = 'Nunca';
 $lang['useheading_o_navigation'] = 'Solamente Navegación';
 $lang['useheading_o_content']  = 'Contenido wiki solamente';
 $lang['useheading_o_1']        = 'Siempre';
+$lang['readdircache']          = 'Tiempo máximo para la cache readdir (en segundos)';

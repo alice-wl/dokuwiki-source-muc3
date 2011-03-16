@@ -244,8 +244,7 @@ function p_get_metadata($id, $key='', $render=false){
     $val = $meta['current'];
 
     // filter by $key
-    foreach(explode(' ', trim($key), 2) as $cur_key) {
-        $cur_key = trim($cur_key);
+    foreach(preg_split('/\s+/', $key, 2, PREG_SPLIT_NO_EMPTY) as $cur_key) {
         if (!isset($val[$cur_key])) {
             return null;
         }
@@ -532,7 +531,7 @@ function p_sort_modes($a, $b){
 /**
  * Renders a list of instruction to the specified output mode
  *
- * In the $info array are informations from the renderer returned
+ * In the $info array is information from the renderer returned
  *
  * @author Harry Fuecks <hfuecks@gmail.com>
  * @author Andreas Gohr <andi@splitbrain.org>
@@ -586,7 +585,7 @@ function & p_get_renderer($mode) {
         // Maybe a plugin/component is available?
         list($plugin, $component) = $plugin_controller->_splitName($rname);
         if (!$plugin_controller->isdisabled($plugin)){
-            $Renderer =& $plugin_controller->load('renderer',$rname, true);
+            $Renderer =& $plugin_controller->load('renderer',$rname);
         }
 
         if(is_null($Renderer)){

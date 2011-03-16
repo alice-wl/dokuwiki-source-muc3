@@ -10,6 +10,7 @@
  * @author sleshek@wp.pl
  * @author Leszek Stachowski <shazarre@gmail.com>
  * @author maros <dobrimaros@yahoo.pl>
+ * @author Grzegorz Widła <dzesdzes@gmail.com>
  */
 $lang['encoding']              = 'utf-8';
 $lang['direction']             = 'ltr';
@@ -96,24 +97,8 @@ $lang['txt_overwrt']           = 'Nadpisać istniejący plik?';
 $lang['lockedby']              = 'Aktualnie zablokowane przez';
 $lang['lockexpire']            = 'Blokada wygasa';
 $lang['willexpire']            = 'Za minutę Twoja blokada tej strony wygaśnie.\nW celu uniknięcia konfliktów wyświetl podgląd aby odnowić blokadę.';
-$lang['notsavedyet']           = 'Nie zapisane zmiany zostaną utracone.\nCzy na pewno kontynuować?';
-$lang['rssfailed']             = 'Wystąpił błąd przy pobieraniu tych danych: ';
-$lang['nothingfound']          = 'Nic nie znaleziono.';
-$lang['mediaselect']           = 'Wysyłanie pliku';
-$lang['fileupload']            = 'Wysyłanie pliku';
-$lang['uploadsucc']            = 'Wysyłanie powiodło się!';
-$lang['uploadfail']            = 'Błąd wysyłania pliku. Czy prawa do katalogów są poprawne?';
-$lang['uploadwrong']           = 'Wysyłanie zabronione. Nie można wysłać plików z takim rozszerzeniem';
-$lang['uploadexist']           = 'Plik już istnieje, nie wykonano operacji.';
-$lang['uploadbadcontent']      = 'Typ pliku "%s" nie odpowiadał jego rozszerzeniu.';
-$lang['uploadspam']            = 'Plik zablokowany przez filtr antyspamowy.';
-$lang['uploadxss']             = 'Plik zablokowany ze względu na podejrzaną zawartość.';
-$lang['uploadsize']            = 'Plik jest za duży (maksymalny rozmiar %s)';
-$lang['deletesucc']            = 'Plik "%s" został usunięty.';
-$lang['deletefail']            = 'Plik "%s" nie został usunięty, sprawdź uprawnienia.';
-$lang['mediainuse']            = 'Plik "%s" nie został usunięty, ponieważ jest używany.';
-$lang['namespaces']            = 'Katalogi';
-$lang['mediafiles']            = 'Dostępne pliki';
+$lang['js']['notsavedyet']     = 'Nie zapisane zmiany zostaną utracone.
+Czy na pewno kontynuować?';
 $lang['js']['searchmedia']     = 'Szukaj plików';
 $lang['js']['keepopen']        = 'Nie zamykaj okna po wyborze';
 $lang['js']['hidedetails']     = 'Ukryj szczegóły';
@@ -144,6 +129,24 @@ $lang['js']['linkwiz']         = 'Tworzenie odnośników';
 $lang['js']['linkto']          = 'Link do';
 $lang['js']['del_confirm']     = 'Czy na pewno usunąć?';
 $lang['js']['mu_btn']          = 'Wyślij wiele plików na raz';
+$lang['rssfailed']             = 'Wystąpił błąd przy pobieraniu tych danych: ';
+$lang['nothingfound']          = 'Nic nie znaleziono.';
+$lang['mediaselect']           = 'Wysyłanie pliku';
+$lang['fileupload']            = 'Wysyłanie pliku';
+$lang['uploadsucc']            = 'Wysyłanie powiodło się!';
+$lang['uploadfail']            = 'Błąd wysyłania pliku. Czy prawa do katalogów są poprawne?';
+$lang['uploadwrong']           = 'Wysyłanie zabronione. Nie można wysłać plików z takim rozszerzeniem';
+$lang['uploadexist']           = 'Plik już istnieje, nie wykonano operacji.';
+$lang['uploadbadcontent']      = 'Typ pliku "%s" nie odpowiadał jego rozszerzeniu.';
+$lang['uploadspam']            = 'Plik zablokowany przez filtr antyspamowy.';
+$lang['uploadxss']             = 'Plik zablokowany ze względu na podejrzaną zawartość.';
+$lang['uploadsize']            = 'Plik jest za duży (maksymalny rozmiar %s)';
+$lang['deletesucc']            = 'Plik "%s" został usunięty.';
+$lang['deletefail']            = 'Plik "%s" nie został usunięty, sprawdź uprawnienia.';
+$lang['mediainuse']            = 'Plik "%s" nie został usunięty, ponieważ jest używany.';
+$lang['namespaces']            = 'Katalogi';
+$lang['mediafiles']            = 'Dostępne pliki';
+$lang['accessdenied']          = 'Nie masz uprawnień, żeby wyświetlić tę stronę.';
 $lang['mediausage']            = 'Użyj następującej składni w odnośniku do tego pliku:';
 $lang['mediaview']             = 'Pokaż oryginalny plik';
 $lang['mediaroot']             = 'główny';
@@ -159,6 +162,7 @@ $lang['current']               = 'aktualna';
 $lang['yours']                 = 'Twoja wersja';
 $lang['diff']                  = 'Pokaż różnice między wersjami';
 $lang['diff2']                 = 'Pokaż różnice między zaznaczonymi wersjami';
+$lang['difflink']              = 'Odnośnik do tego porównania';
 $lang['line']                  = 'Linia';
 $lang['breadcrumb']            = 'Ślad';
 $lang['youarehere']            = 'Jesteś tutaj';
@@ -256,6 +260,7 @@ $lang['i_pol0']                = 'Otwarte Wiki (odczyt, zapis i dodawanie plikó
 $lang['i_pol1']                = 'Publiczne Wiki (odczyt dla wszystkich, zapis i dodawanie plików tylko dla zarejestrowanych użytkowników)';
 $lang['i_pol2']                = 'Zamknięte Wiki (odczyt, zapis i dodawanie plików tylko dla zarejestrowanych użytkowników)';
 $lang['i_retry']               = 'Spróbuj ponownie';
+$lang['i_license']             = 'Wybierz licencję, na warunkach której chcesz udostępniać treści:';
 $lang['mu_intro']              = 'Możesz tutaj wysłać wiele plików na raz. Kliknij przycisk "Przeglądaj" aby dodać je do kolejki. Kliknij "Wyślij" gdy skończysz.';
 $lang['mu_gridname']           = 'Nazwa pliku';
 $lang['mu_gridsize']           = 'Rozmiar';

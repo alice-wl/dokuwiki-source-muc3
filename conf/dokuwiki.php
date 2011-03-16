@@ -89,6 +89,7 @@ $conf['usedraft']    = 1;                //automatically save a draft while edit
 $conf['sepchar']     = '_';              //word separator character in page names; may be a
                                          //  letter, a digit, '_', '-', or '.'.
 $conf['canonical']   = 0;                //Should all URLs use full canonical http://... style?
+$conf['fnencode']    = 'url';            //encode filenames (url|safe|utf-8)
 $conf['autoplural']  = 0;                //try (non)plural form of nonexisting files?
 $conf['compression'] = 'gz';             //compress old revisions: (0: off) ('gz': gnuzip) ('bz2': bzip)
                                          //  bz2 generates smaller files, but needs more cpu-power
@@ -141,11 +142,12 @@ $conf['target']['media']     = '';
 $conf['target']['windows']   = '';
 
 //Proxy setup - if your Server needs a proxy to access the web set these
-$conf['proxy']['host'] = '';
-$conf['proxy']['port'] = '';
-$conf['proxy']['user'] = '';
-$conf['proxy']['pass'] = '';
-$conf['proxy']['ssl']  = 0;
+$conf['proxy']['host']    = '';
+$conf['proxy']['port']    = '';
+$conf['proxy']['user']    = '';
+$conf['proxy']['pass']    = '';
+$conf['proxy']['ssl']     = 0;
+$conf['proxy']['except']  = '';
 
 /* Safemode Hack */
 

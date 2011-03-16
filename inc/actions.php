@@ -16,13 +16,10 @@ if(!defined('DOKU_INC')) die('meh.');
  * @triggers ACTION_HEADERS_SEND
  */
 function act_dispatch(){
-    global $INFO;
     global $ACT;
     global $ID;
     global $QUERY;
     global $lang;
-    global $conf;
-    global $license;
 
     $preact = $ACT;
 
@@ -57,7 +54,6 @@ function act_dispatch(){
         $ACT = act_permcheck($ACT);
 
         //register
-        $nil = array();
         if($ACT == 'register' && $_POST['save'] && register()){
             $ACT = 'login';
         }
@@ -109,7 +105,7 @@ function act_dispatch(){
             $ACT = act_draftsave($ACT);
 
         //edit
-        if(($ACT == 'edit' || $ACT == 'preview' || $ACT == 'recover') && $INFO['editable']){
+        if(in_array($ACT, array('edit', 'preview', 'recover'))) {
             $ACT = act_edit($ACT);
         }else{
             unlock($ID); //try to unlock
@@ -149,6 +145,10 @@ function act_dispatch(){
         act_redirect($ID,$preact);
     }
 
+    global $INFO;
+    global $conf;
+    global $license;
+
     //call template FIXME: all needed vars available?
     $headers[] = 'Content-Type: text/html; charset=utf-8';
     trigger_event('ACTION_HEADERS_SEND',$headers,'act_sendheaders');
@@ -184,6 +184,8 @@ function act_clean($act){
 
     if($act == 'export_html') $act = 'export_xhtml';
     if($act == 'export_htmlbody') $act = 'export_xhtmlbody';
+
+    if($act === '') $act = 'show';
 
     // check if action is disabled
     if(!actionOK($act)){
@@ -231,7 +233,7 @@ function act_permcheck($act){
         }else{
             $permneed = AUTH_CREATE;
         }
-    }elseif(in_array($act,array('login','search','recent','profile'))){
+    }elseif(in_array($act,array('login','search','recent','profile','index'))){
         $permneed = AUTH_NONE;
     }elseif($act == 'revert'){
         $permneed = AUTH_ADMIN;
@@ -343,6 +345,11 @@ function act_revert($act){
     global $ID;
     global $REV;
     global $lang;
+    // FIXME $INFO['writable'] currently refers to the attic version
+    // global $INFO;
+    // if (!$INFO['writable']) {
+    //     return 'show';
+    // }
 
     // when no revision is given, delete current one
     // FIXME this feature is not exposed in the GUI currently
@@ -382,16 +389,6 @@ function act_revert($act){
 function act_redirect($id,$preact){
     global $PRE;
     global $TEXT;
-    global $MSG;
-
-    //are there any undisplayed messages? keep them in session for display
-    //on the next page
-    if(isset($MSG) && count($MSG)){
-        //reopen session, store data and close session again
-        @session_start();
-        $_SESSION[DOKU_COOKIE]['msg'] = $MSG;
-        session_write_close();
-    }
 
     $opts = array(
             'id'       => $id,
@@ -600,6 +597,9 @@ function act_subscription($act){
     global $lang;
     global $INFO;
     global $ID;
+
+    // subcriptions work for logged in users only
+    if(!$_SERVER['REMOTE_USER']) return 'show';
 
     // get and preprocess data.
     $params = array();

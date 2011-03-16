@@ -7,7 +7,7 @@ if(isset($HTTP_RAW_POST_DATA)) $HTTP_RAW_POST_DATA = trim($HTTP_RAW_POST_DATA);
 /**
  * Increased whenever the API is changed
  */
-define('DOKU_XMLRPC_API_VERSION',3);
+define('DOKU_XMLRPC_API_VERSION',4);
 
 require_once(DOKU_INC.'inc/init.php');
 session_write_close();  //close session
@@ -132,6 +132,15 @@ class dokuwiki_xmlrpc_server extends IXR_IntrospectionServer {
             'this:setLocks',
             array('struct','struct'),
             'Lock or unlock pages.'
+        );
+
+
+        $this->addCallback(
+            'dokuwiki.getTitle',
+            'this:getTitle',
+            array('string'),
+            'Returns the wiki title.',
+            true
         );
 
         /* Wiki API v2 http://www.jspwiki.org/wiki/WikiRPCInterface2 */
@@ -280,6 +289,7 @@ class dokuwiki_xmlrpc_server extends IXR_IntrospectionServer {
      * Return a raw wiki page
      */
     function rawPage($id,$rev=''){
+        $id = cleanID($id);
         if(auth_quickaclcheck($id) < AUTH_READ){
             return new IXR_Error(1, 'You are not allowed to read this page');
         }
@@ -335,6 +345,7 @@ class dokuwiki_xmlrpc_server extends IXR_IntrospectionServer {
      * Return a wiki page rendered to html
      */
     function htmlPage($id,$rev=''){
+        $id = cleanID($id);
         if(auth_quickaclcheck($id) < AUTH_READ){
             return new IXR_Error(1, 'You are not allowed to read this page');
         }
@@ -345,24 +356,22 @@ class dokuwiki_xmlrpc_server extends IXR_IntrospectionServer {
      * List all pages - we use the indexer list here
      */
     function listPages(){
-        global $conf;
-
         $list  = array();
-        $pages = file($conf['indexdir'] . '/page.idx');
-        $pages = array_filter($pages, 'isVisiblePage');
+        $pages = array_filter(array_filter(idx_getIndex('page', ''),
+                                           'isVisiblePage'),
+                              'page_exists');
 
         foreach(array_keys($pages) as $idx) {
-            if(page_exists($pages[$idx])) {
-                $perm = auth_quickaclcheck($pages[$idx]);
-                if($perm >= AUTH_READ) {
-                    $page = array();
-                    $page['id'] = trim($pages[$idx]);
-                    $page['perms'] = $perm;
-                    $page['size'] = @filesize(wikiFN($pages[$idx]));
-                    $page['lastModified'] = new IXR_Date(@filemtime(wikiFN($pages[$idx])));
-                    $list[] = $page;
-                }
+            $perm = auth_quickaclcheck($pages[$idx]);
+            if($perm < AUTH_READ) {
+                continue;
             }
+            $page = array();
+            $page['id'] = trim($pages[$idx]);
+            $page['perms'] = $perm;
+            $page['size'] = @filesize(wikiFN($pages[$idx]));
+            $page['lastModified'] = new IXR_Date(@filemtime(wikiFN($pages[$idx])));
+            $list[] = $page;
         }
 
         return $list;
@@ -415,9 +424,16 @@ class dokuwiki_xmlrpc_server extends IXR_IntrospectionServer {
                 'snippet' => $snippet,
             );
         }
-        return $data;
+        return $pages;
     }
 
+    /**
+     * Returns the wiki title.
+     */
+    function getTitle(){
+        global $conf;
+        return $conf['title'];
+    }
 
     /**
      * List all media files.
@@ -460,13 +476,14 @@ class dokuwiki_xmlrpc_server extends IXR_IntrospectionServer {
      * Return a list of backlinks
      */
     function listBackLinks($id){
-        return ft_backlinks($id);
+        return ft_backlinks(cleanID($id));
     }
 
     /**
      * Return some basic data about a page
      */
     function pageInfo($id,$rev=''){
+        $id = cleanID($id);
         if(auth_quickaclcheck($id) < AUTH_READ){
             return new IXR_Error(1, 'You are not allowed to read this page');
         }
@@ -569,6 +586,7 @@ class dokuwiki_xmlrpc_server extends IXR_IntrospectionServer {
      * Michael Klier <chi@chimeric.de>
      */
     function putAttachment($id, $file, $params) {
+        $id = cleanID($id);
         global $conf;
         global $lang;
 
@@ -636,6 +654,7 @@ class dokuwiki_xmlrpc_server extends IXR_IntrospectionServer {
      * @author Gina Haeussge <osd@foosel.net>
      */
     function deleteAttachment($id){
+        $id = cleanID($id);
         $auth = auth_quickaclcheck(getNS($id).':*');
         if($auth < AUTH_DELETE) return new IXR_ERROR(1, "You don't have permissions to delete files.");
         global $conf;
@@ -693,6 +712,7 @@ class dokuwiki_xmlrpc_server extends IXR_IntrospectionServer {
     * Returns the permissions of a given wiki page
     */
     function aclCheck($id) {
+        $id = cleanID($id);
         return auth_quickaclcheck($id);
     }
 
@@ -702,13 +722,14 @@ class dokuwiki_xmlrpc_server extends IXR_IntrospectionServer {
      * @author Michael Klier <chi@chimeric.de>
      */
     function listLinks($id) {
+        $id = cleanID($id);
         if(auth_quickaclcheck($id) < AUTH_READ){
             return new IXR_Error(1, 'You are not allowed to read this page');
         }
         $links = array();
 
         // resolve page instructions
-        $ins   = p_cached_instructions(wikiFN(cleanID($id)));
+        $ins   = p_cached_instructions(wikiFN($id));
 
         // instantiate new Renderer - needed for interwiki links
         include(DOKU_INC.'inc/parser/xhtml.php');
@@ -816,6 +837,10 @@ class dokuwiki_xmlrpc_server extends IXR_IntrospectionServer {
      * @author Michael Klier <chi@chimeric.de>
      */
     function pageVersions($id, $first) {
+        $id = cleanID($id);
+        if(auth_quickaclcheck($id) < AUTH_READ){
+            return new IXR_Error(1, 'You are not allowed to read this page');
+        }
         global $conf;
 
         $versions = array();
@@ -891,7 +916,8 @@ class dokuwiki_xmlrpc_server extends IXR_IntrospectionServer {
         $unlockfail = array();
 
         foreach((array) $set['lock'] as $id){
-            if(checklock($id)){
+            $id = cleanID($id);
+            if(auth_quickaclcheck($id) < AUTH_EDIT || checklock($id)){
                 $lockfail[] = $id;
             }else{
                 lock($id);
@@ -900,10 +926,11 @@ class dokuwiki_xmlrpc_server extends IXR_IntrospectionServer {
         }
 
         foreach((array) $set['unlock'] as $id){
-            if(unlock($id)){
-                $unlocked[] = $id;
-            }else{
+            $id = cleanID($id);
+            if(auth_quickaclcheck($id) < AUTH_EDIT || !unlock($id)){
                 $unlockfail[] = $id;
+            }else{
+                $unlocked[] = $id;
             }
         }
 

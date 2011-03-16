@@ -5,6 +5,7 @@
 
 define('TEST_GROUPS',realpath(dirname(__FILE__).'/../cases'));
 define('TEST_CASES',realpath(dirname(__FILE__).'/../cases'));
+define('TEST_PLUGINS',realpath(dirname(__FILE__).'/../../lib/plugins'));
 
 // try to load runkit extension
 if (!extension_loaded('runkit') && function_exists('dl')) {
@@ -50,17 +51,28 @@ class TestManager {
     }
 
     function runAllTests(&$reporter) {
-        $manager =& new TestManager();
+        $manager = new TestManager();
         $test_cases =& $manager->_getTestFileList();
-        $test =& new GroupTest('All Tests');
+        $test = new GroupTest('All Tests');
         foreach ($test_cases as $test_case) {
             $test->addTestFile($test_case);
         }
         $test->run($reporter);
     }
 
+    function runAllPluginTests(&$reporter) {
+        $manager = new TestManager();
+        $test_cases =& $manager->_getTestFileList(TEST_PLUGINS);
+        $test = new GroupTest('All Plugin Tests');
+        foreach ($test_cases as $test_case) {
+            $test->addTestFile($test_case);
+        }
+        $test->run($reporter);
+    }
+
+
     function runTestCase($testcase_name, $test_case_directory, &$reporter) {
-        $manager =& new TestManager();
+        $manager = new TestManager();
         
         $testcase_name = preg_replace('/[^a-zA-Z0-9_:]/','',$testcase_name);
         $testcase_name = str_replace(':',DIRECTORY_SEPARATOR,$testcase_name);
@@ -73,26 +85,26 @@ class TestManager {
                           E_USER_ERROR);
         }
 
-        $test =& new GroupTest("Individual test case: " . $testcase_name);
+        $test = new GroupTest("Individual test case: " . $testcase_name);
         $test->addTestFile($testcase_file);
         $test->run($reporter);
     }
     
     function runTestFile($testcase_file, &$reporter) {
-        $manager =& new TestManager();
+        $manager = new TestManager();
         
         if (! file_exists($testcase_file)) {
             trigger_error("Test case {$testcase_file} cannot be found",
                           E_USER_ERROR);
         }
 
-        $test =& new GroupTest("Individual test case: " . $testcase_file);
+        $test = new GroupTest("Individual test case: " . $testcase_file);
         $test->addTestFile($testcase_file);
         $test->run($reporter);
     }
 
     function runGroupTest($group_test_name, $group_test_directory, &$reporter) {
-        $manager =& new TestManager();
+        $manager = new TestManager();
         $group_test_name = preg_replace('/[^a-zA-Z0-9_:]/','',$group_test_name);
         $group_test_name = str_replace(':',DIRECTORY_SEPARATOR,$group_test_name);
         $file_path = $group_test_directory . DIRECTORY_SEPARATOR .
@@ -104,7 +116,7 @@ class TestManager {
         }
 
         require_once $file_path;
-        $test =& new GroupTest($group_test_name . ' group test');
+        $test = new GroupTest($group_test_name . ' group test');
         foreach ($manager->_getGroupTestClassNames($file_path) as $group_test) {
             $test->addTestCase(new $group_test());
         }
@@ -112,7 +124,7 @@ class TestManager {
     }
 
     function addTestCasesFromDirectory(&$group_test, $directory = '.') {
-        $manager =& new TestManager();
+        $manager = new TestManager();
         $test_cases =& $manager->_getTestFileList($directory);
         foreach ($test_cases as $test_case) {
             $group_test->addTestFile($test_case);
@@ -120,17 +132,17 @@ class TestManager {
     }
 
     function &getTestCaseList($directory = '.') {
-        $manager =& new TestManager();
+        $manager = new TestManager();
         return $manager->_getTestCaseList($directory);
     }
 
     function &_getTestCaseList($directory = '.') {
-        $base = TEST_GROUPS . DIRECTORY_SEPARATOR;
         $file_list =& $this->_getTestFileList($directory);
         $testcases = array();
         foreach ($file_list as $testcase_file) {
             $case = str_replace($this->_testcase_extension, '',$testcase_file);
-            $case = str_replace($base, '', $case);
+            $case = str_replace(TEST_GROUPS . DIRECTORY_SEPARATOR, '', $case);
+            $case = str_replace(TEST_PLUGINS . DIRECTORY_SEPARATOR, '', $case);
             $case = str_replace(DIRECTORY_SEPARATOR, ':', $case);
             $testcases[$testcase_file] = $case;
         }
@@ -142,8 +154,18 @@ class TestManager {
                                             array(&$this, '_isTestCaseFile'));
     }
 
+    function &getPluginTestCaseList($directory = '.') {
+        $manager = new TestManager();
+        return $manager->_getTestCaseList($directory);
+    }
+
+    function &getPluginGroupTestList($directory = '.') {
+        $manager = new TestManager();
+        return $manager->_getTestGroupList($directory);
+    }
+
     function &getGroupTestList($directory = '.') {
-        $manager =& new TestManager();
+        $manager = new TestManager();
         return $manager->_getTestGroupList($directory);
     }
 
@@ -153,12 +175,12 @@ class TestManager {
     }
 
     function &_getTestGroupList($directory = '.') {
-        $base = TEST_GROUPS . DIRECTORY_SEPARATOR;
         $file_list =& $this->_getTestGroupFileList($directory);
         $grouptests = array();
         foreach ($file_list as $grouptest_file) {
             $group = str_replace($this->_grouptest_extension, '',$grouptest_file);
-            $group = str_replace($base, '', $group);
+            $group = str_replace(TEST_GROUPS . DIRECTORY_SEPARATOR, '', $group);
+            $group = str_replace(TEST_PLUGINS . DIRECTORY_SEPARATOR, '', $group);
             $group = str_replace(DIRECTORY_SEPARATOR, ':', $group);
             $grouptests[$grouptest_file] = $group;
         }
@@ -168,7 +190,7 @@ class TestManager {
 
     function &_getGroupTestClassNames($grouptest_file) {
         $file = implode("\n", file($grouptest_file));
-        preg_match("~lass\s+?(.*)\s+?extends GroupTest~", $file, $matches);
+        preg_match("~lass\s+?(.*)\s+?extends .*?GroupTest~", $file, $matches);
         if (! empty($matches)) {
             unset($matches[0]);
             return $matches;
@@ -222,7 +244,7 @@ class TestManager {
 */
 class CLITestManager extends TestManager {
     function &getGroupTestList($directory = '.') {
-        $manager =& new CLITestManager();
+        $manager = new CLITestManager();
         $group_tests =& $manager->_getTestGroupList($directory);
 
         $buffer = "Available grouptests:\n";
@@ -233,7 +255,7 @@ class CLITestManager extends TestManager {
     }
 
     function &getTestCaseList($directory = '.') {
-        $manager =& new CLITestManager();
+        $manager = new CLITestManager();
         $test_cases =& $manager->_getTestCaseList($directory);
 
         $buffer = "Available test cases:\n";
@@ -242,6 +264,29 @@ class CLITestManager extends TestManager {
         }
         return $buffer . "\n";
     }
+
+    function &getPluginTestCaseList($directory = '.') {
+        $manager = new CLITestManager();
+        $test_cases =& $manager->_getTestCaseList($directory);
+
+        $buffer = "Available test cases:\n";
+        foreach ($test_cases as $test_case) {
+            $buffer .= "  " . $test_case . "\n";
+        }
+        return $buffer . "\n";
+    }
+
+    function &getPluginGroupTestList($directory = '.') {
+        $manager = new CLITestManager();
+        $test_cases =& $manager->_getTestGroupList($directory);
+
+        $buffer = "Available test cases:\n";
+        foreach ($test_cases as $test_case) {
+            $buffer .= "  " . $test_case . "\n";
+        }
+        return $buffer . "\n";
+    }
+
 }
 
 class HTMLTestManager extends TestManager {
@@ -256,7 +301,7 @@ class HTMLTestManager extends TestManager {
     }
 
     function &getGroupTestList($directory = '.') {
-        $manager =& new HTMLTestManager();
+        $manager = new HTMLTestManager();
         $group_tests =& $manager->_getTestGroupList($directory);
         if (1 > count($group_tests)) {
             return "<p>No test groups set up!</p>";
@@ -273,7 +318,7 @@ class HTMLTestManager extends TestManager {
     }
 
     function &getTestCaseList($directory = '.') {
-        $manager =& new HTMLTestManager();
+        $manager = new HTMLTestManager();
         $testcases =& $manager->_getTestCaseList($directory);
 
         if (1 > count($testcases)) {
@@ -289,6 +334,42 @@ class HTMLTestManager extends TestManager {
         $buffer .= "</ul>\n";
         return $buffer;
     }
+
+    function &getPluginTestCaseList($directory = '.') {
+        $manager = new HTMLTestManager();
+        $testcases =& $manager->_getTestCaseList($directory);
+
+        if (1 > count($testcases)) {
+            return "<p>No plugin test cases set up!</p>";
+        }
+        $buffer = "<p>Available plugin test cases:</p>\n<ul>";
+        foreach ($testcases as $testcase) {
+            $buffer .= "<li><a href='" . $manager->getBaseURL() .
+                "?plugin_case=" . urlencode($testcase) . "'>" .
+                $testcase . "</a></li>\n";
+        }
+
+        $buffer .= "</ul>\n";
+        return $buffer;
+    }
+
+    function &getPluginGroupTestList($directory = '.') {
+        $manager = new HTMLTestManager();
+        $group_tests =& $manager->_getTestGroupList($directory);
+        if (1 > count($group_tests)) {
+            return "<p>No plugin test groups set up!</p>";
+        }
+        $buffer = "<p>Available plugin groups:</p>\n<ul>";
+        $buffer .= "<li><a href='" . $manager->getBaseURL() . "?plugin_group=all'>All tests</a></li>\n";
+        foreach ($group_tests as $group_test) {
+            $buffer .= "<li><a href='" . $manager->getBaseURL() . "?plugin_group={$group_test}'>" .
+                $group_test . "</a></li>\n";
+        }
+
+        $buffer .= "</ul>\n";
+        return $buffer;
+    }
+
 }
 
 /**
@@ -302,7 +383,7 @@ class XMLTestManager extends HTMLTestManager {
 
     function &getGroupTestList($directory = '.') {
 
-        $manager =& new XMLTestManager();
+        $manager = new XMLTestManager();
         $group_tests =& $manager->_getTestGroupList($directory);
 
         $rss = & $manager->_getRssWriter();
@@ -337,7 +418,7 @@ class XMLTestManager extends HTMLTestManager {
 
     function &getTestCaseList($directory = '.') {
 
-        $manager =& new XMLTestManager();
+        $manager = new XMLTestManager();
         $testcases =& $manager->_getTestCaseList($directory);
 
         $rss = & $manager->_getRssWriter();
@@ -371,7 +452,7 @@ class XMLTestManager extends HTMLTestManager {
         require_once TEST_ROOT . '/lib/xml_writer_class.php';
         require_once TEST_ROOT . '/lib/rss_writer_class.php';
 
-        $rss_writer_object=& new rss_writer_class();
+        $rss_writer_object= new rss_writer_class();
         $rss_writer_object->specification="1.0";
         $rss_writer_object->about=$url."index.php?output=xml";
         $rss_writer_object->stylesheet=$url."rss2html.xsl";
@@ -415,13 +496,13 @@ class RemoteTestManager extends TestManager {
 
     function runAllTests(&$reporter, $url = FALSE) {
         $groups = RemoteTestManager::getGroupTestList($url);
-        $T = &new RemoteTestCase($groups['All Tests']);
+        $T = new RemoteTestCase($groups['All Tests']);
         $T->run($reporter);
     }
     
     function runTestUrl($case_url,& $reporter, $url = FALSE) {
         RemoteTestManager::_installSimpleTest();
-        $T = &new RemoteTestCase($case_url);
+        $T = new RemoteTestCase($case_url);
         $T->run($reporter);
     }
 
@@ -430,7 +511,7 @@ class RemoteTestManager extends TestManager {
         if ( !array_key_exists($case_id, $cases) ) {
             trigger_error("Unknown test id $case_id\n",E_USER_ERROR);
         }
-        $T = &new RemoteTestCase($cases[$case_id]);
+        $T = new RemoteTestCase($cases[$case_id]);
         $T->run($reporter);
     }
 
@@ -439,7 +520,7 @@ class RemoteTestManager extends TestManager {
         if ( !array_key_exists($group_name, $groups) ) {
             trigger_error("Unknown group $group_name\n",E_USER_ERROR);
         }
-        $T = &new RemoteTestCase($groups[$group_name]);
+        $T = new RemoteTestCase($groups[$group_name]);
         $T->run($reporter);
     }
 
@@ -451,7 +532,7 @@ class RemoteTestManager extends TestManager {
 
         $url .= '?output=xml';
         
-        $manager =& new RemoteTestManager();
+        $manager = new RemoteTestManager();
         $rss = & $manager->_getRssReader($url);
 
         $groupList = array();
@@ -469,7 +550,7 @@ class RemoteTestManager extends TestManager {
         }
 
         $url .= '?show=cases&output=xml';
-        $manager =& new RemoteTestManager();
+        $manager = new RemoteTestManager();
         $rss = & $manager->_getRssReader($url);
 
         $caseList = array();
@@ -484,7 +565,7 @@ class RemoteTestManager extends TestManager {
     function &_getRssReader($url) {
         require_once "XML/RSS.php";
 
-        $rss_reader =& new XML_RSS($url);
+        $rss_reader = new XML_RSS($url);
 
         $status = $rss_reader->parse();
 

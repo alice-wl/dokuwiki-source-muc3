@@ -116,6 +116,7 @@ $lang['useslash']    = 'Use slash as namespace separator in URLs';
 $lang['usedraft']    = 'Automatically save a draft while editing';
 $lang['sepchar']     = 'Page name word separator';
 $lang['canonical']   = 'Use fully canonical URLs';
+$lang['fnencode']    = 'Method for encoding non-ASCII filenames.';
 $lang['autoplural']  = 'Check for plural forms in links';
 $lang['compression'] = 'Compression method for attic files';
 $lang['cachetime']   = 'Maximum age for cache (sec)';
@@ -156,11 +157,12 @@ $lang['target____media']     = 'Target window for media links';
 $lang['target____windows']   = 'Target window for windows links';
 
 /* Proxy Options */
-$lang['proxy____host'] = 'Proxy servername';
-$lang['proxy____port'] = 'Proxy port';
-$lang['proxy____user'] = 'Proxy user name';
-$lang['proxy____pass'] = 'Proxy password';
-$lang['proxy____ssl']  = 'Use ssl to connect to Proxy';
+$lang['proxy____host']    = 'Proxy servername';
+$lang['proxy____port']    = 'Proxy port';
+$lang['proxy____user']    = 'Proxy user name';
+$lang['proxy____pass']    = 'Proxy password';
+$lang['proxy____ssl']     = 'Use SSL to connect to proxy';
+$lang['proxy____except']  = 'Regular expression to match URLs for which the proxy should be skipped for.';
 
 /* Safemode Hack */
 $lang['safemodehack'] = 'Enable safemode hack';

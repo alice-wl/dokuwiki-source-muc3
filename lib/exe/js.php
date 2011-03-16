@@ -29,6 +29,7 @@ if(!defined('SIMPLE_TEST')){
 function js_out(){
     global $conf;
     global $lang;
+    global $config_cascade;
 
     // The generated script depends on some dynamic options
     $cache = getCacheName('scripts'.$_SERVER['HTTP_HOST'].$_SERVER['SERVER_PORT'],'.js');
@@ -50,12 +51,15 @@ function js_out(){
                 DOKU_INC.'lib/scripts/linkwiz.js',
                 DOKU_INC.'lib/scripts/media.js',
                 DOKU_INC.'lib/scripts/subscriptions.js',
+# disabled for FS#1958                DOKU_INC.'lib/scripts/hotkeys.js',
                 DOKU_TPLINC.'script.js',
             );
 
     // add possible plugin scripts and userscript
     $files   = array_merge($files,js_pluginscripts());
-    $files[] = DOKU_CONF.'userscript.js';
+    if(isset($config_cascade['userscript']['default'])){
+        $files[] = $config_cascade['userscript']['default'];
+    }
 
     // check cache age & handle conditional request
     header('Cache-Control: public, max-age=3600');
@@ -107,12 +111,13 @@ function js_out(){
     js_runonstart('addTocToggle()');
     js_runonstart("initSizeCtl('size__ctl','wiki__text')");
     js_runonstart("initToolbar('tool__bar','wiki__text',toolbar)");
-    js_runonstart("initChangeCheck('".js_escape($lang['notsavedyet'])."')");
     if($conf['locktime'] != 0){
         js_runonstart("locktimer.init(".($conf['locktime'] - 60).",'".js_escape($lang['willexpire'])."',".$conf['usedraft'].")");
     }
     js_runonstart('scrollToMarker()');
     js_runonstart('focusMarker()');
+    // init hotkeys - must have been done after init of toolbar
+# disabled for FS#1958    js_runonstart('initializeHotkeys()');
 
     // end output buffering and get contents
     $js = ob_get_contents();

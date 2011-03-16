@@ -9,6 +9,8 @@
  * @author Harith <haj@berlingske.dk>
  * @author Daniel Ejsing-Duun <dokuwiki@zilvador.dk>
  * @author Erik Bjørn Pedersen <erik.pedersen@shaw.ca>
+ * @author rasmus@kinnerup.com
+ * @author Michael Pedersen subben@gmail.com
  */
 $lang['menu']                  = 'Opsætningsindstillinger';
 $lang['error']                 = 'Indstillingerne blev ikke opdateret på grund af en ugyldig værdi, Gennemse venligst dine ændringer og gem dem igen.
@@ -98,6 +100,7 @@ $lang['useslash']              = 'Brug skråstreg som navnerumsdeler i netadress
 $lang['usedraft']              = 'Gem automatisk en kladde under redigering';
 $lang['sepchar']               = 'Orddelingstegn til sidenavne';
 $lang['canonical']             = 'Benyt fuldt kanoniske netadresser';
+$lang['fnencode']              = 'Metode for indkodning af ikke ASCII filnavne';
 $lang['autoplural']            = 'Tjek for flertalsendelser i henvisninger';
 $lang['compression']           = 'Pakningsmetode for attic-filer';
 $lang['cachetime']             = 'Længste levetid for "cache" (sek)';
@@ -111,6 +114,7 @@ $lang['gdlib']                 = 'Udgave af GD Lib';
 $lang['im_convert']            = 'Sti til ImageMagick\'s omdannerværktøj';
 $lang['jpg_quality']           = 'JPG komprimeringskvalitet (0-100)';
 $lang['subscribers']           = 'Slå understøttelse af abonnement på sider til';
+$lang['subscribe_time']        = 'Tid der går før abonnementlister og nyhedsbreve er sendt (i sekunder). Denne værdi skal være mindre end den tid specificeret under recent_days.';
 $lang['compress']              = 'Komprimer CSS- og JavaScript-filer';
 $lang['hidepages']             = 'Skjul lignende sider (almindelige udtryk)';
 $lang['send404']               = 'Send "HTTP 404/Page Not Found" for ikke-eksisterende sider';
@@ -137,6 +141,7 @@ $lang['proxy____port']         = 'Proxy-port';
 $lang['proxy____user']         = 'Proxy-brugernavn';
 $lang['proxy____pass']         = 'Proxy-kodeord';
 $lang['proxy____ssl']          = 'Brug SSL til at forbinde til proxy';
+$lang['proxy____except']       = 'Regular expression til at matche URL\'er for hvilke proxier der skal ignores';
 $lang['safemodehack']          = 'Slå "safemode hack" til ';
 $lang['ftp____host']           = 'FTP-server til "safemode hack"';
 $lang['ftp____port']           = 'FTP-port til "safemode hack"';
@@ -184,3 +189,4 @@ $lang['useheading_o_0']        = 'Aldrig';
 $lang['useheading_o_navigation'] = 'Kun navigering';
 $lang['useheading_o_content']  = 'Kun wiki-indhold';
 $lang['useheading_o_1']        = 'Altid';
+$lang['readdircache']          = 'Maksimum alder for readdir hukommelse (sek)';

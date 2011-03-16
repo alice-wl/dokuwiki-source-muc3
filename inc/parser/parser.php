@@ -298,6 +298,10 @@ class Doku_Parser_Mode_hr extends Doku_Parser_Mode {
 }
 
 //-------------------------------------------------------------------
+/**
+ * This class sets the markup for bold (=strong),
+ * italic (=emphasis), underline etc.
+ */
 class Doku_Parser_Mode_formatting extends Doku_Parser_Mode {
     var $type;
 
@@ -413,8 +417,8 @@ class Doku_Parser_Mode_listblock extends Doku_Parser_Mode {
     }
 
     function connectTo($mode) {
-        $this->Lexer->addEntryPattern('\n {2,}[\-\*]',$mode,'listblock');
-        $this->Lexer->addEntryPattern('\n\t{1,}[\-\*]',$mode,'listblock');
+        $this->Lexer->addEntryPattern('[ \t]*\n {2,}[\-\*]',$mode,'listblock');
+        $this->Lexer->addEntryPattern('[ \t]*\n\t{1,}[\-\*]',$mode,'listblock');
 
         $this->Lexer->addPattern('\n {2,}[\-\*]','listblock');
         $this->Lexer->addPattern('\n\t{1,}[\-\*]','listblock');

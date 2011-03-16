@@ -391,6 +391,7 @@ function media_contentcheck($file,$mime){
 function media_notify($id,$file,$mime){
     global $lang;
     global $conf;
+    global $INFO;
     if(empty($conf['notify'])) return; //notify enabled?
 
     $ip = clientIP();
@@ -406,14 +407,9 @@ function media_notify($id,$file,$mime){
     $text = str_replace('@MEDIA@',ml($id,'',true,'&',true),$text);
     $text = str_replace('@SIZE@',filesize_h(filesize($file)),$text);
 
-    $from = $conf['mailfrom'];
-    $from = str_replace('@USER@',$_SERVER['REMOTE_USER'],$from);
-    $from = str_replace('@NAME@',$INFO['userinfo']['name'],$from);
-    $from = str_replace('@MAIL@',$INFO['userinfo']['mail'],$from);
-
     $subject = '['.$conf['title'].'] '.$lang['mail_upload'].' '.$id;
 
-    mail_send($conf['notify'],$subject,$text,$from);
+    mail_send($conf['notify'],$subject,$text,$conf['mailfrom']);
 }
 
 /**
@@ -729,6 +725,7 @@ function media_nstree($ns){
     // currently selected namespace
     $ns  = cleanID($ns);
     if(empty($ns)){
+        global $ID;
         $ns = dirname(str_replace(':','/',$ID));
         if($ns == '.') $ns ='';
     }

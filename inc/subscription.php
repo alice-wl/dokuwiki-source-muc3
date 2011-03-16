@@ -9,6 +9,8 @@
  * - subscription_set
  * - get_info_subscribed
  * - subscription_addresslist
+ * - subscription_lock
+ * - subscription_unlock
  *
  * @author  Adrian Lang <lang@cosmocode.de>
  * @license GPL 2 (http://www.gnu.org/licenses/gpl.html)
@@ -27,19 +29,60 @@ function subscription_filename($id) {
     $meta_fname = '.mlist';
     if ((substr($id, -1, 1) === ':')) {
         $meta_froot = getNS($id);
-        if ($meta_froot === false) {
-            $meta_fname = '/' . $meta_fname;
-        }
+        $meta_fname = '/' . $meta_fname;
     } else {
         $meta_froot = $id;
     }
-    return metaFN($meta_froot, $meta_fname);
+    return metaFN((string) $meta_froot, $meta_fname);
+}
+
+/**
+ * Lock subscription info for an ID
+ *
+ * @param string $id The target page or namespace, specified by id; Namespaces
+ *                   are identified by appending a colon.
+ *
+ * @author Adrian Lang <lang@cosmocode.de>
+ */
+function subscription_lock_filename ($id){
+    global $conf;
+    return $conf['lockdir'].'/_subscr_' . $id . '.lock';
+}
+
+function subscription_lock($id) {
+    // FIXME merge this with the indexer lock generation, abstract out
+    global $conf;
+    $lock = subscription_lock_filename($id);
+    while(!@mkdir($lock,$conf['dmode'])){
+        usleep(50);
+        if(time()-@filemtime($lock) > 60*5){
+            // looks like a stale lock - remove it
+            @rmdir($lock);
+        }else{
+            return false;
+        }
+    }
+    if($conf['dperm']) chmod($lock, $conf['dperm']);
+    return true;
+}
+
+/**
+ * Unlock subscription info for an ID
+ *
+ * @param string $id The target page or namespace, specified by id; Namespaces
+ *                   are identified by appending a colon.
+ *
+ * @author Adrian Lang <lang@cosmocode.de>
+ */
+function subscription_unlock($id) {
+    $lockf = subscription_lock_filename($id);
+    return @rmdir($lockf);
 }
 
 /**
  * Set subscription information
  *
- * Allows to set subscription informations for permanent storage in meta files.
+ * Allows to set subscription information for permanent storage in meta files.
  * Subscriptions consist of a target object, a subscribing user, a subscribe
  * style and optional data.
  * A subscription may be deleted by specifying an empty subscribe style.
@@ -72,7 +115,7 @@ function subscription_set($user, $page, $style, $data = null,
 
         // io_deleteFromFile does not return false if no line matched.
         return io_deleteFromFile($file,
-                                 subscription_regex(array('user' => $user)),
+                                 subscription_regex(array('user' => auth_nameencode($user))),
                                  true);
     }
 
@@ -132,6 +175,10 @@ function subscription_find($page, $pre) {
                 // This is an old subscription file.
                 $subscription = trim($subscription) . " every\n";
             }
+
+            list($user, $rest) = explode(' ', $subscription, 2);
+            $subscription = rawurldecode($user) . " " . $rest;
+
             if (preg_match(subscription_regex($pre), $subscription,
                            $line_matches) === 0) {
                 continue;
@@ -225,7 +272,7 @@ function subscription_addresslist(&$data){
     $self = $data['self'];
     $addresslist = $data['addresslist'];
 
-    if (!$conf['subscribers']) {
+    if (!$conf['subscribers'] || $auth === null) {
         return '';
     }
     $pres = array('style' => 'every', 'escaped' => true);
@@ -256,20 +303,18 @@ function subscription_addresslist(&$data){
  * Sends a digest mail showing a bunch of changes.
  *
  * @param string $subscriber_mail The target mail address
- * @param array  $change          The newest change
+ * @param array  $id              The ID
  * @param int    $lastupdate      Time of the last notification
  *
  * @author Adrian Lang <lang@cosmocode.de>
  */
-function subscription_send_digest($subscriber_mail, $change, $lastupdate) {
-    $id = $change['id'];
+function subscription_send_digest($subscriber_mail, $id, $lastupdate) {
     $n = 0;
     do {
         $rev = getRevisions($id, $n++, 1);
         $rev = (count($rev) > 0) ? $rev[0] : null;
     } while (!is_null($rev) && $rev > $lastupdate);
 
-    $ip = $change['ip'];
     $replaces = array('NEWPAGE'   => wl($id, '', true, '&'),
                       'SUBSCRIBE' => wl($id, array('do' => 'subscribe'), true, '&'));
     if (!is_null($rev)) {
@@ -294,24 +339,25 @@ function subscription_send_digest($subscriber_mail, $change, $lastupdate) {
  * Sends a list mail showing a list of changed pages.
  *
  * @param string $subscriber_mail The target mail address
- * @param array  $changes         Array of changes
- * @param string $id              The id of the namespace
+ * @param array  $ids             Array of ids
+ * @param string $ns_id           The id of the namespace
  *
  * @author Adrian Lang <lang@cosmocode.de>
  */
-function subscription_send_list($subscriber_mail, $changes, $id) {
+function subscription_send_list($subscriber_mail, $ids, $ns_id) {
+    if (count($ids) === 0) return;
     global $conf;
     $list = '';
-    foreach ($changes as $change) {
-        $list .= '* ' . wl($change['id'], array(), true) . NL;
+    foreach ($ids as $id) {
+        $list .= '* ' . wl($id, array(), true) . NL;
     }
     subscription_send($subscriber_mail,
                       array('DIFF'      => rtrim($list),
-                            'SUBSCRIBE' => wl($id . $conf['start'],
+                            'SUBSCRIBE' => wl($ns_id . $conf['start'],
                                               array('do' => 'subscribe'),
                                               true, '&')),
                       'subscribe_list',
-                      prettyprint_id($id),
+                      prettyprint_id($ns_id),
                       'subscr_list');
 }
 

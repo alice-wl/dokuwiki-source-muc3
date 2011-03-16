@@ -54,49 +54,7 @@ global $cache_metadata;
 
 //set the configuration cascade - but only if its not already been set in preload.php
 if (empty($config_cascade)) {
-    $config_cascade = array(
-            'main' => array(
-                'default'   => array(DOKU_CONF.'dokuwiki.php'),
-                'local'     => array(DOKU_CONF.'local.php'),
-                'protected' => array(DOKU_CONF.'local.protected.php'),
-                ),
-            'acronyms'  => array(
-                'default'   => array(DOKU_CONF.'acronyms.conf'),
-                'local'     => array(DOKU_CONF.'acronyms.local.conf'),
-                ),
-            'entities'  => array(
-                'default'   => array(DOKU_CONF.'entities.conf'),
-                'local'     => array(DOKU_CONF.'entities.local.conf'),
-                ),
-            'interwiki' => array(
-                'default'   => array(DOKU_CONF.'interwiki.conf'),
-                'local'     => array(DOKU_CONF.'interwiki.local.conf'),
-                ),
-            'license' => array(
-                'default'   => array(DOKU_CONF.'license.php'),
-                'local'     => array(DOKU_CONF.'license.local.php'),
-                ),
-            'mediameta' => array(
-                    'default'   => array(DOKU_CONF.'mediameta.php'),
-                    'local'     => array(DOKU_CONF.'mediameta.local.php'),
-                    ),
-            'mime'      => array(
-                    'default'   => array(DOKU_CONF.'mime.conf'),
-                    'local'     => array(DOKU_CONF.'mime.local.conf'),
-                    ),
-            'scheme'    => array(
-                    'default'   => array(DOKU_CONF.'scheme.conf'),
-                    'local'     => array(DOKU_CONF.'scheme.local.conf'),
-                    ),
-            'smileys'   => array(
-                    'default'   => array(DOKU_CONF.'smileys.conf'),
-                    'local'     => array(DOKU_CONF.'smileys.local.conf'),
-                    ),
-            'wordblock' => array(
-                    'default'   => array(DOKU_CONF.'wordblock.conf'),
-                    'local'     => array(DOKU_CONF.'wordblock.local.conf'),
-                    ),
-            );
+    include(DOKU_INC.'inc/config_cascade.php');
 }
 
 //prepare config array()
@@ -242,17 +200,28 @@ init_creationmodes();
 init_paths();
 init_files();
 
-// automatic upgrade to script versions of certain files
-scriptify(DOKU_CONF.'users.auth');
-scriptify(DOKU_CONF.'acl.auth');
+// setup plugin controller class (can be overwritten in preload.php)
+$plugin_types = array('admin','syntax','action','renderer', 'helper');
+global $plugin_controller_class, $plugin_controller;
+if (empty($plugin_controller_class)) $plugin_controller_class = 'Doku_Plugin_Controller';
 
 // load libraries
 require_once(DOKU_INC.'inc/load.php');
+
+// initialize plugin controller
+$plugin_controller = new $plugin_controller_class();
+
+// initialize the event handler
+global $EVENT_HANDLER;
+$EVENT_HANDLER = new Doku_Event_Handler();
 
 // setup authentication system
 if (!defined('NOSESSION')) {
     auth_setup();
 }
+
+// setup mail system
+mail_setup();
 
 /**
  * Checks paths from config file
@@ -292,7 +261,7 @@ function init_paths(){
 function init_files(){
     global $conf;
 
-    $files = array( $conf['indexdir'].'/page.idx');
+    $files = array($conf['indexdir'].'/page.idx');
 
     foreach($files as $file){
         if(!@file_exists($file)){
@@ -303,6 +272,22 @@ function init_files(){
             }else{
                 nice_die("$file is not writable. Check your permissions settings!");
             }
+        }
+    }
+
+    # create title index (needs to have same length as page.idx)
+    $file = $conf['indexdir'].'/title.idx';
+    if(!@file_exists($file)){
+        $pages = file($conf['indexdir'].'/page.idx');
+        $pages = count($pages);
+        $fh = @fopen($file,'a');
+        if($fh){
+            for($i=0; $i<$pages; $i++){
+                fwrite($fh,"\n");
+            }
+            fclose($fh);
+        }else{
+            nice_die("$file is not writable. Check your permissions settings!");
         }
     }
 }
@@ -474,43 +459,6 @@ function is_ssl(){
     }else{
         return true;
     }
-}
-
-/**
- * Append a PHP extension to a given file and adds an exit call
- *
- * This is used to migrate some old configfiles. An added PHP extension
- * ensures the contents are not shown to webusers even if .htaccess files
- * do not work
- *
- * @author Jan Decaluwe <jan@jandecaluwe.com>
- */
-function scriptify($file) {
-    // checks
-    if (!is_readable($file)) {
-        return;
-    }
-    $fn = $file.'.php';
-    if (@file_exists($fn)) {
-        return;
-    }
-    $fh = fopen($fn, 'w');
-    if (!$fh) {
-        nice_die($fn.' is not writable. Check your permission settings!');
-    }
-    // write php exit hack first
-    fwrite($fh, "# $fn\n");
-    fwrite($fh, '# <?php exit()?>'."\n");
-    fwrite($fh, "# Don't modify the lines above\n");
-    fwrite($fh, "#\n");
-    // copy existing lines
-    $lines = file($file);
-    foreach ($lines as $line){
-        fwrite($fh, $line);
-    }
-    fclose($fh);
-    //try to rename the old file
-    io_rename($file,"$file.old");
 }
 
 /**

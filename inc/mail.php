@@ -11,6 +11,7 @@ if(!defined('DOKU_INC')) die('meh.');
 // end of line for mail lines - RFC822 says CRLF but postfix (and other MTAs?)
 // think different
 if(!defined('MAILHEADER_EOL')) define('MAILHEADER_EOL',"\n");
+if(!defined('QUOTEDPRINTABLE_EOL')) define('QUOTEDPRINTABLE_EOL',"\015\012");
 #define('MAILHEADER_ASCIIONLY',1);
 
 /**
@@ -29,7 +30,39 @@ if(!defined('MAILHEADER_EOL')) define('MAILHEADER_EOL',"\n");
 if (!defined('RFC2822_ATEXT')) define('RFC2822_ATEXT',"0-9a-zA-Z!#$%&'*+/=?^_`{|}~-");
 if (!defined('PREG_PATTERN_VALID_EMAIL')) define('PREG_PATTERN_VALID_EMAIL', '['.RFC2822_ATEXT.']+(?:\.['.RFC2822_ATEXT.']+)*@(?i:[0-9a-z][0-9a-z-]*\.)+(?i:[a-z]{2,4}|museum|travel)');
 
+/**
+ * Prepare mailfrom replacement patterns
+ *
+ * @author Andreas Gohr <andi@splitbrain.org>
+ */
+function mail_setup(){
+    global $conf;
+    global $INFO;
 
+    $replace = array();
+
+    if(!empty($INFO['userinfo']['mail'])){
+        $replace['@MAIL@'] = $INFO['userinfo']['mail'];
+    }else{
+        $replace['@MAIL@'] = 'noreply@'.parse_url(DOKU_URL,PHP_URL_HOST);
+    }
+
+    if(!empty($_SERVER['REMOTE_USER'])){
+        $replace['@USER@'] = $_SERVER['REMOTE_USER'];
+    }else{
+        $replace['@USER@'] = 'noreply';
+    }
+
+    if(!empty($INFO['userinfo']['name'])){
+        $replace['@NAME@'] = $INFO['userinfo']['name'];
+    }else{
+        $replace['@NAME@'] = '';
+    }
+
+    $conf['mailfrom'] = str_replace(array_keys($replace),
+                                    array_values($replace),
+                                    $conf['mailfrom']);
+}
 
 /**
  * UTF-8 autoencoding replacement for PHPs mail function
@@ -254,11 +287,11 @@ function mail_quotedprintable_encode($sText,$maxlen=74,$bEmulate_imap_8bit=true)
         // but this wouldn't be caught by such an easy RegExp
         if($maxlen){
             preg_match_all( '/.{1,'.($maxlen - 2).'}([^=]{0,2})?/', $sLine, $aMatch );
-            $sLine = implode( '=' . MAILHEADER_EOL, $aMatch[0] ); // add soft crlf's
+            $sLine = implode( '=' . QUOTEDPRINTABLE_EOL, $aMatch[0] ); // add soft crlf's
         }
     }
 
     // join lines into text
-    return implode(MAILHEADER_EOL,$aLines);
+    return implode(QUOTEDPRINTABLE_EOL,$aLines);
 }
 

@@ -97,7 +97,6 @@ function pageinfo(){
     global $REV;
     global $RANGE;
     global $USERINFO;
-    global $conf;
     global $lang;
 
     // include ID & REV not redundant, as some parts of DokuWiki may temporarily change $ID, e.g. p_wiki_xhtml
@@ -227,7 +226,7 @@ function buildURLparams($params, $sep='&amp;'){
     foreach($params as $key => $val){
         if($amp) $url .= $sep;
 
-        $url .= $key.'=';
+        $url .= rawurlencode($key).'=';
         $url .= rawurlencode((string)$val);
         $amp = true;
     }
@@ -594,9 +593,9 @@ function clientIP($single=false){
     $ip = array();
     $ip[] = $_SERVER['REMOTE_ADDR'];
     if(!empty($_SERVER['HTTP_X_FORWARDED_FOR']))
-        $ip = array_merge($ip,explode(',',$_SERVER['HTTP_X_FORWARDED_FOR']));
+        $ip = array_merge($ip,explode(',',str_replace(' ','',$_SERVER['HTTP_X_FORWARDED_FOR'])));
     if(!empty($_SERVER['HTTP_X_REAL_IP']))
-        $ip = array_merge($ip,explode(',',$_SERVER['HTTP_X_REAL_IP']));
+        $ip = array_merge($ip,explode(',',str_replace(' ','',$_SERVER['HTTP_X_REAL_IP'])));
 
     // some IPv4/v6 regexps borrowed from Feyd
     // see: http://forums.devnetwork.net/viewtopic.php?f=38&t=53479
@@ -836,7 +835,7 @@ function pageTemplate($id){
  *
  * @author Andreas Gohr <andi@splitbrain.org>
  */
-function parsePageTemplate($data) {
+function parsePageTemplate(&$data) {
     extract($data);
 
     global $USERINFO;
@@ -844,7 +843,7 @@ function parsePageTemplate($data) {
 
     // replace placeholders
     $file = noNS($id);
-    $page = strtr($file,'_',' ');
+    $page = strtr($file, $conf['sepchar'], ' ');
 
     $tpl = str_replace(array(
                 '@ID@',
@@ -879,7 +878,7 @@ function parsePageTemplate($data) {
 
     // we need the callback to work around strftime's char limit
     $tpl = preg_replace_callback('/%./',create_function('$m','return strftime($m[0]);'),$tpl);
-
+    $data['tpl'] = $tpl;
     return $tpl;
 }
 
@@ -988,9 +987,10 @@ function saveWikiText($id,$text,$summary,$minor=false){
         $mfiles = metaFiles($id);
         $changelog = metaFN($id, '.changes');
         $metadata  = metaFN($id, '.meta');
+        $subscribers = metaFN($id, '.mlist');
         foreach ($mfiles as $mfile) {
-            // but keep per-page changelog to preserve page history and keep meta data
-            if (@file_exists($mfile) && $mfile!==$changelog && $mfile!==$metadata) { @unlink($mfile); }
+            // but keep per-page changelog to preserve page history, keep subscriber list and keep meta data
+            if (@file_exists($mfile) && $mfile!==$changelog && $mfile!==$metadata && $mfile!==$subscribers) { @unlink($mfile); }
         }
         // purge meta data
         p_purge_metadata($id);
@@ -1106,6 +1106,8 @@ function notify($id,$who,$rev='',$summary='',$minor=false,$replace=array()){
     $text = str_replace('@DOKUWIKIURL@',DOKU_URL,$text);
     $text = str_replace('@SUMMARY@',$summary,$text);
     $text = str_replace('@USER@',$_SERVER['REMOTE_USER'],$text);
+    $text = str_replace('@NAME@',$INFO['userinfo']['name'],$text);
+    $text = str_replace('@MAIL@',$INFO['userinfo']['mail'],$text);
 
     foreach ($replace as $key => $substitution) {
         $text = str_replace('@'.strtoupper($key).'@',$substitution, $text);
@@ -1126,14 +1128,13 @@ function notify($id,$who,$rev='',$summary='',$minor=false,$replace=array()){
         $diff = rawWiki($id);
     }
     $text = str_replace('@DIFF@',$diff,$text);
-    $subject = '['.$conf['title'].'] '.$subject;
+    if(utf8_strlen($conf['title']) < 20) {
+        $subject = '['.$conf['title'].'] '.$subject;
+    }else{
+        $subject = '['.utf8_substr($conf['title'], 0, 20).'...] '.$subject;
+    }
 
-    $from = $conf['mailfrom'];
-    $from = str_replace('@USER@',$_SERVER['REMOTE_USER'],$from);
-    $from = str_replace('@NAME@',$INFO['userinfo']['name'],$from);
-    $from = str_replace('@MAIL@',$INFO['userinfo']['mail'],$from);
-
-    mail_send($to,$subject,$text,$from,'',$bcc);
+    mail_send($to,$subject,$text,$conf['mailfrom'],'',$bcc);
 }
 
 /**
@@ -1322,6 +1323,9 @@ function php_to_byte($v){
         case 'K':
             $ret *= 1024;
         break;
+        default;
+            $ret *= 10;
+        break;
     }
     return $ret;
 }
@@ -1459,8 +1463,27 @@ function is_mem_available($mem,$bytes=1048576){
  * @author Andreas Gohr <andi@splitbrain.org>
  */
 function send_redirect($url){
+    //are there any undisplayed messages? keep them in session for display
+    global $MSG;
+    if (isset($MSG) && count($MSG) && !defined('NOSESSION')){
+        //reopen session, store data and close session again
+        @session_start();
+        $_SESSION[DOKU_COOKIE]['msg'] = $MSG;
+    }
+
     // always close the session
     session_write_close();
+
+    // work around IE bug
+    // http://www.ianhoar.com/2008/11/16/internet-explorer-6-and-redirected-anchor-links/
+    list($url,$hash) = explode('#',$url);
+    if($hash){
+        if(strpos($url,'?')){
+            $url = $url.'&#'.$hash;
+        }else{
+            $url = $url.'?&#'.$hash;
+        }
+    }
 
     // check if running on IIS < 6 with CGI-PHP
     if( isset($_SERVER['SERVER_SOFTWARE']) && isset($_SERVER['GATEWAY_INTERFACE']) &&

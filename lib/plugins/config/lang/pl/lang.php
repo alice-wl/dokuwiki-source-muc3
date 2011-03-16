@@ -11,6 +11,7 @@
  * @author sleshek@wp.pl
  * @author Leszek Stachowski <shazarre@gmail.com>
  * @author maros <dobrimaros@yahoo.pl>
+ * @author Grzegorz Widła <dzesdzes@gmail.com>
  */
 $lang['menu']                  = 'Ustawienia';
 $lang['error']                 = 'Ustawienia nie zostały zapisane z powodu błędnych wartości, przejrzyj je i ponów próbę zapisu. <br/> Niepoprawne wartości są wyróżnione kolorem czerwonym.';
@@ -98,6 +99,7 @@ $lang['useslash']              = 'Używanie ukośnika jako separatora w adresie 
 $lang['usedraft']              = 'Automatyczne zapisywanie szkicu podczas edycji';
 $lang['sepchar']               = 'Znak rozdzielający wyrazy nazw';
 $lang['canonical']             = 'Kanoniczne adresy URL';
+$lang['fnencode']              = 'Metoda kodowana nazw pików bez użycia ASCII.';
 $lang['autoplural']            = 'Automatyczne tworzenie liczby mnogiej';
 $lang['compression']           = 'Metoda kompresji dla usuniętych plików';
 $lang['cachetime']             = 'Maksymalny wiek cache w sekundach';
@@ -138,6 +140,7 @@ $lang['proxy____port']         = 'Proxy - port';
 $lang['proxy____user']         = 'Proxy - nazwa użytkownika';
 $lang['proxy____pass']         = 'Proxy - hasło';
 $lang['proxy____ssl']          = 'Proxy - SSL';
+$lang['proxy____except']       = 'Wyrażenie regularne określające adresy URL, do których nie należy używać proxy.';
 $lang['safemodehack']          = 'Bezpieczny tryb (przez FTP)';
 $lang['ftp____host']           = 'FTP - serwer';
 $lang['ftp____port']           = 'FTP - port';
@@ -185,3 +188,4 @@ $lang['useheading_o_0']        = 'Nigdy';
 $lang['useheading_o_navigation'] = 'W nawigacji';
 $lang['useheading_o_content']  = 'W treści';
 $lang['useheading_o_1']        = 'Zawsze';
+$lang['readdircache']          = 'Maksymalny czas dla bufora readdir (w sek).';

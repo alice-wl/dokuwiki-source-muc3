@@ -26,7 +26,8 @@ if(!$defer){
 $ID = cleanID($_REQUEST['id']);
 
 // Catch any possible output (e.g. errors)
-if(!isset($_REQUEST['debug'])) ob_start();
+$output = isset($_REQUEST['debug']) && $conf['allowdebug'];
+if(!$output) ob_start();
 
 // run one of the jobs
 $tmp = array(); // No event data
@@ -42,7 +43,7 @@ if ($evt->advise_before()) {
 }
 if($defer) sendGIF();
 
-if(!isset($_REQUEST['debug'])) ob_end_clean();
+if(!$output) ob_end_clean();
 exit;
 
 // --------------------------------------------------------------------
@@ -134,18 +135,6 @@ function runIndexer(){
     global $conf;
     print "runIndexer(): started".NL;
 
-    // Move index files (if needed)
-    // Uses the importoldindex plugin to upgrade the index automatically.
-    // FIXME: Remove this from runIndexer when it is no longer needed.
-    if (@file_exists($conf['cachedir'].'/page.idx') &&
-        (!@file_exists($conf['indexdir'].'/page.idx') ||
-         !filesize($conf['indexdir'].'/page.idx'))  &&
-        !@file_exists($conf['indexdir'].'/index_importing')) {
-        echo "trigger TEMPORARY_INDEX_UPGRADE_EVENT\n";
-        $tmp = array(); // no event data
-        trigger_event('TEMPORARY_INDEX_UPGRADE_EVENT', $tmp);
-    }
-
     if(!$ID) return false;
 
     // check if indexing needed
@@ -174,10 +163,6 @@ function runIndexer(){
         }
     }
     if($conf['dperm']) chmod($lock, $conf['dperm']);
-
-    // upgrade to version 2
-    if (!@file_exists($conf['indexdir'].'/pageword.idx'))
-        idx_upgradePageWords();
 
     // do the work
     idx_addPage($ID);
@@ -267,7 +252,7 @@ function runSitemapper(){
        return false;
     }
 
-    $pages = file($conf['indexdir'].'/page.idx');
+    $pages = idx_getIndex('page', '');
     print 'runSitemapper(): creating sitemap using '.count($pages).' pages'.NL;
 
     // build the sitemap
@@ -353,6 +338,9 @@ function sendDigest() {
     $olduser  = $_SERVER['REMOTE_USER'];
 
     foreach($subscriptions as $id => $users) {
+        if (!subscription_lock($id)) {
+            continue;
+        }
         foreach($users as $data) {
             list($user, $style, $lastupdate) = $data;
             $lastupdate = (int) $lastupdate;
@@ -372,33 +360,44 @@ function sendDigest() {
             if (substr($id, -1, 1) === ':') {
                 // The subscription target is a namespace
                 $changes = getRecentsSince($lastupdate, null, getNS($id));
-                if (count($changes) === 0) {
-                    continue;
-                }
-                if ($style === 'digest') {
-                    foreach($changes as $change) {
-                        subscription_send_digest($USERINFO['mail'], $change,
-                                                 $lastupdate);
-                    }
-                } elseif ($style === 'list') {
-                    subscription_send_list($USERINFO['mail'], $changes, $id);
-                }
-                // TODO: Handle duplicate subscriptions.
             } else {
                 if(auth_quickaclcheck($id) < AUTH_READ) continue;
 
                 $meta = p_get_metadata($id);
-                $rev = $meta['last_change']['date'];
-                if ($rev < $lastupdate) {
-                    // There is no new revision.
-                    continue;
-                }
-                subscription_send_digest($USERINFO['mail'], $meta['last_change'],
-                                         $lastupdate);
+                $changes = array($meta['last_change']);
             }
+
+            // Filter out pages only changed in small and own edits
+            $change_ids = array();
+            foreach($changes as $rev) {
+                $n = 0;
+                while (!is_null($rev) && $rev['date'] >= $lastupdate &&
+                       ($_SERVER['REMOTE_USER'] === $rev['user'] ||
+                        $rev['type'] === DOKU_CHANGE_TYPE_MINOR_EDIT)) {
+                    $rev = getRevisions($rev['id'], $n++, 1);
+                    $rev = (count($rev) > 0) ? $rev[0] : null;
+                }
+
+                if (!is_null($rev) && $rev['date'] >= $lastupdate) {
+                    // Some change was not a minor one and not by myself
+                    $change_ids[] = $rev['id'];
+                }
+            }
+
+            if ($style === 'digest') {
+                foreach($change_ids as $change_id) {
+                    subscription_send_digest($USERINFO['mail'], $change_id,
+                                             $lastupdate);
+                }
+            } elseif ($style === 'list') {
+                subscription_send_list($USERINFO['mail'], $change_ids, $id);
+            }
+            // TODO: Handle duplicate subscriptions.
+
             // Update notification time.
             subscription_set($user, $id, $style, time(), true);
         }
+        subscription_unlock($id);
     }
 
     // restore current user info

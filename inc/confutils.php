@@ -16,29 +16,24 @@
  * @author Andreas Gohr <andi@splitbrain.org>
  */
 function mimetype($file, $knownonly=true){
-    $ret    = array(false,false,false); // return array
     $mtypes = getMimeTypes();     // known mimetypes
-    $exts   = join('|',array_keys($mtypes));  // known extensions (regexp)
-    if(!$knownonly){
-        $exts = $exts.'|[_\-A-Za-z0-9]+';  // any extension
+    $ext    = strrpos($file, '.');
+    if ($ext === false) {
+        return array(false, false, false);
     }
-    if(preg_match('#\.('.$exts.')$#i',$file,$matches)){
-        $ext = strtolower($matches[1]);
-    }
-
-    if($ext){
-        if (isset($mtypes[$ext])){
-            if($mtypes[$ext][0] == '!'){
-                $ret = array($ext, substr($mtypes[$ext],1), true);
-            }else{
-                $ret = array($ext, $mtypes[$ext], false);
-            }
-        }elseif(!$knownonly){
-            $ret = array($ext, 'application/octet-stream', true);
+    $ext = strtolower(substr($file, $ext + 1));
+    if (!isset($mtypes[$ext])){
+        if ($knownonly) {
+            return array(false, false, false);
+        } else {
+            return array($ext, 'application/octet-stream', true);
         }
     }
-
-    return $ret;
+    if($mtypes[$ext][0] == '!'){
+        return array($ext, substr($mtypes[$ext],1), true);
+    }else{
+        return array($ext, $mtypes[$ext], false);
+    }
 }
 
 /**
@@ -241,6 +236,7 @@ function actionOK($action){
     static $disabled = null;
     if(is_null($disabled)){
         global $conf;
+        global $auth;
 
         // prepare disabled actions array and handle legacy options
         $disabled = explode(',',$conf['disableactions']);
@@ -249,6 +245,12 @@ function actionOK($action){
         if(isset($conf['resendpasswd']) && !$conf['resendpasswd']) $disabled[] = 'resendpwd';
         if(isset($conf['subscribers']) && !$conf['subscribers']) {
             $disabled[] = 'subscribe';
+        }
+        if (is_null($auth) || !$auth->canDo('addUser')) {
+            $disabled[] = 'register';
+        }
+        if (is_null($auth) || !$auth->canDo('modPass')) {
+            $disabled[] = 'resendpwd';
         }
         $disabled = array_unique($disabled);
     }
