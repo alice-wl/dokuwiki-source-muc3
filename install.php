@@ -46,7 +46,10 @@ $dokuwiki_hash = array(
     '2008-05-04'   => '1e5c42eac3219d9e21927c39e3240aad',
     '2009-02-14'   => 'ec8c04210732a14fdfce0f7f6eead865',
     '2009-12-25'   => '993c4b2b385643efe5abf8e7010e11f4',
-    '2010-11-07'   => '7921d48195f4db21b8ead6d9bea801b8'
+    '2010-11-07'   => '7921d48195f4db21b8ead6d9bea801b8',
+    '2011-05-25'   => '4241865472edb6fa14a1227721008072',
+    '2011-11-10'   => 'b46ff19a7587966ac4df61cbab1b8b31',
+    '2012-01-25'   => '72c083c73608fc43c586901fd5dabb74',
 );
 
 
@@ -417,16 +420,18 @@ function check_permissions(){
     global $lang;
 
     $dirs = array(
-        'conf'      => DOKU_LOCAL,
-        'data'      => DOKU_INC.'data',
-        'pages'     => DOKU_INC.'data/pages',
-        'attic'     => DOKU_INC.'data/attic',
-        'media'     => DOKU_INC.'data/media',
-        'meta'      => DOKU_INC.'data/meta',
-        'cache'     => DOKU_INC.'data/cache',
-        'locks'     => DOKU_INC.'data/locks',
-        'index'     => DOKU_INC.'data/index',
-        'tmp'       => DOKU_INC.'data/tmp'
+        'conf'        => DOKU_LOCAL,
+        'data'        => DOKU_INC.'data',
+        'pages'       => DOKU_INC.'data/pages',
+        'attic'       => DOKU_INC.'data/attic',
+        'media'       => DOKU_INC.'data/media',
+        'media_attic' => DOKU_INC.'data/media_attic',
+        'media_meta'  => DOKU_INC.'data/media_meta',
+        'meta'        => DOKU_INC.'data/meta',
+        'cache'       => DOKU_INC.'data/cache',
+        'locks'       => DOKU_INC.'data/locks',
+        'index'       => DOKU_INC.'data/index',
+        'tmp'         => DOKU_INC.'data/tmp'
     );
 
     $ok = true;
@@ -460,7 +465,8 @@ function check_functions(){
                          'glob header ignore_user_abort ini_get mail mkdir '.
                          'ob_start opendir parse_ini_file readfile realpath '.
                          'rename rmdir serialize session_start unlink usleep '.
-                         'preg_replace file_get_contents htmlspecialchars_decode');
+                         'preg_replace file_get_contents htmlspecialchars_decode '.
+                         'spl_autoload_register');
 
     if (!function_exists('mb_substr')) {
         $funcs[] = 'utf8_encode';

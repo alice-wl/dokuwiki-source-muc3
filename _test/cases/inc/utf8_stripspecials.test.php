@@ -17,6 +17,7 @@ class utf8_stripspecials extends UnitTestCase {
         $tests[] = array('ascii.string','','\._\-:\*','asciistring');
         $tests[] = array('ascii.string',' ','\._\-:\*','ascii string');
         $tests[] = array('2.1.14',' ','\._\-:\*','2 1 14');
+        $tests[] = array('string with nbsps','_','\*','string_with_nbsps');
 
         foreach($tests as $test){
             $this->assertEqual(utf8_stripspecials($test[0],$test[1],$test[2]),$test[3]);
@@ -24,4 +25,4 @@ class utf8_stripspecials extends UnitTestCase {
     }
 
 }
-//Setup VIM: ex: et ts=4 enc=utf-8 :
+//Setup VIM: ex: et ts=4 :
